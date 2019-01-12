@@ -1,4 +1,5 @@
 const app = require('./app');
+const {sequelize} = require('./database/sequelize');
 require('dotenv').config();
 
 function startServer(port) {

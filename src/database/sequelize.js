@@ -14,8 +14,8 @@ const sequelize = new Sequelize('marketplace', 'root', 'password', {
 
 const Product = ProductModel(sequelize, Sequelize);
 
-sequelize.sync({ force: true}).then(() => {
+sequelize.sync({ force: true }).then(() => {
   console.log(`Database & tables created!`);
 })
 
-module.exports = { Product };
+module.exports = { Product, sequelize };

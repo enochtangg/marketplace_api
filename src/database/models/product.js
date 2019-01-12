@@ -3,10 +3,20 @@ module.exports = (sequelize, type) => {
         id: {
           type: type.INTEGER,
           primaryKey: true,
-          autoIncrement: true
+          autoIncrement: true,
+          allowNull: false
         },
-        title: type.STRING,
-        price: type.DOUBLE,
-        inventory_count: type.INTEGER
+        title: {
+            type: type.STRING,
+            allowNull: false
+        },
+        price: {
+            type: type.DOUBLE,
+            allowNull: false
+        },
+        inventory_count: {
+            type: type.INTEGER,
+            allowNull: false
+        }
     })
 }
