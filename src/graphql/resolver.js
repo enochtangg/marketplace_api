@@ -1,13 +1,13 @@
-const productsData = require('../database/products');
+const productsData = require('../database/models/product');
 
 const productResolver = require('./resolvers/products');
 
 // The root provides a resolver function for each API endpoint
 const root = {
-    product: ({ id }) => {
+    getOneProduct: ({ id }) => {
         null
     },
-    all_products: () => {
+    getAllProducts: ({ onlyAvailableInventory}) => {
         null
     }
 };

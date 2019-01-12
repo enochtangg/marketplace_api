@@ -7,6 +7,6 @@ type Product {
 }`;
 
 exports.ProductQueries = `
-    product(id: Int!): Product
-    all_products: [Product]
+    getOneProduct(id: Int!): Product
+    getAllProducts(onlyAvailableInventory: Boolean!): [Product]
 `;
