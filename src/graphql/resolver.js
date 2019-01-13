@@ -1,14 +1,20 @@
-const productsData = require('../database/models/product');
+const {Product} = require('../database/sequelize');
 
 const productResolver = require('./resolvers/products');
 
 // The root provides a resolver function for each API endpoint
 const root = {
-    getOneProduct: ({ id }) => {
-        null
+    getOneProduct: async ({ id }) => {
+        return await Product.findAll({
+            where: {
+                id: id
+            }
+        });
     },
-    getAllProducts: ({ onlyAvailableInventory}) => {
-        null
+    getAllProducts: async ({ onlyAvailableInventory}) => {
+        if (!onlyAvailableInventory) {
+            return await Product.findAll();
+        }
     }
 };
 

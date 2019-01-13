@@ -18,5 +18,5 @@ module.exports = (sequelize, type) => {
             type: type.INTEGER,
             allowNull: false
         }
-    })
+    }, { timestamps: false })
 }
