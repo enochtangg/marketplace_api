@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/enochtangg/marketplace_api#readme",
   "dependencies": {
+    "apollo-errors": "^1.9.0",
     "dotenv": "^6.2.0",
     "express": "^4.16.4",
     "express-graphql": "^0.7.1",

@@ -1,5 +1,6 @@
 const Sequelize = require('sequelize');
 const ProductModel = require('./models/product');
+const CartModel = require('./models/cart');
 
 const sequelize = new Sequelize('marketplace', 'root', 'password', {
   host: 'localhost',
@@ -13,9 +14,10 @@ const sequelize = new Sequelize('marketplace', 'root', 'password', {
 });
 
 const Product = ProductModel(sequelize, Sequelize);
+const Cart = CartModel(sequelize, Sequelize);
 
 sequelize.sync({ force: true }).then(() => {
   console.log(`Database & tables created!`);
 })
 
-module.exports = { Product, sequelize };
+module.exports = { Product, Cart, sequelize };
