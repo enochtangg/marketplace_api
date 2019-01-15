@@ -14,7 +14,7 @@ module.exports = (sequelize, type) => {
             type: type.DOUBLE,
             allowNull: false
         },
-        inventory_count: {
+        inventoryCount: {
             type: type.INTEGER,
             allowNull: false
         }

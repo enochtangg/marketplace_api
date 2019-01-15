@@ -1,26 +1,22 @@
 module.exports = (sequelize, type) => {
-    return sequelize.define('cart', {
+    return sequelize.define('cartItem', {
         id: {
           type: type.INTEGER,
           primaryKey: true,
           autoIncrement: true,
           allowNull: false
         },
-        owner: {
-            type: type.STRING,
+        productId: {
+            type: type.INTEGER,
             allowNull: false
         },
-        subtotal: {
-            type: type.DOUBLE,
-            defaultValue: 0
-        },
-        total: {
-            type: type.DOUBLE,
-            defaultValue: 0
-        },
-        numberOfItems: {
+        quantity: {
             type: type.INTEGER,
-            defaultValue: 0
+            allowNull: false
+        },
+        cartId: {
+            type: type.INTEGER,
+            allowNull: false
         }
     }, { timestamps: false })
 }

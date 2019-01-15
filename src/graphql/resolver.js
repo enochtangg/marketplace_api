@@ -30,17 +30,17 @@ const root = {
             })
         }
     },
-    getOneCart: async ({ id }) => {
+    getOneUser: async ({ id }) => {
         return await Cart.findAll({
             where: {
                 id: id
             }
         });
     },
-    getAllCarts: async () => {
+    getAllUsers: async () => {
         return await Cart.findAll();
     },
-    createCart: async ({ owner }) => {
+    createUser: async ({ owner }) => {
         return await Cart.findOrCreate({
             where: {
               owner: owner.trim()
@@ -58,6 +58,9 @@ const root = {
             console.log('Created cart');
             return cart;
         });
+    },
+    addItemToCart: async({ item_id, cart_owner }) => {
+        // create an instance of cartItem with relationship cartItem -> cart
     }
 };
 

@@ -3,7 +3,7 @@ type Product {
     id: Int
     title: String
     price: Float
-    inventory_count: Int
+    inventoryCount: Int
 }`;
 
 exports.ProductQueries = `

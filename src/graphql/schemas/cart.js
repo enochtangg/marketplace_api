@@ -2,9 +2,9 @@ exports.Cart = `
 type Cart {
     id: Int
     owner: String
-    sub_total: Float
+    subtotal: Float
     total: Float
-    number_of_items: Int
+    numberOfItems: Int
 }`;
 
 exports.CartQueries = `
@@ -14,4 +14,5 @@ exports.CartQueries = `
 
 exports.CartMutations = `
     createCart(owner: String!): Cart
+    addItemToCart(item_id: Int!, cart_owner: String!): Cart
 `;
