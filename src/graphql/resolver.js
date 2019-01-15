@@ -41,26 +41,22 @@ const root = {
         return await Cart.findAll();
     },
     createCart: async ({ owner }) => {
-        await Cart.findOrCreate({
+        return await Cart.findOrCreate({
             where: {
               owner: owner.trim()
             },
-            defaults: { // set the default properties if it doesn't exist
+            defaults: {
               owner: owner.trim()
             }
           }).then(async (result) => {
-            let cart = result[0] // the instance of the cart
-            let created = result[1]; // boolean stating if it was created or not
+            let cart = result[0];
+            let created = result[1];
       
-            if (!created) { // false if author already exists and was not created.
+            if (!created) {
                 throw new Error(errorName.DUPLICATE_ENTRY);
             }
             console.log('Created cart');
-        });
-        return await Cart.findAll({
-            where: {
-                owner: owner.trim()
-            }
+            return cart;
         });
     }
 };
