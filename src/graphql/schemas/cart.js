@@ -21,5 +21,5 @@ exports.CartQueries = `
 
 exports.CartMutations = `
     createCart(owner: String!): Cart
-    addItemToCart(item_id: Int!, cart_owner: String!): Cart
+    addItemToCart(productId: Int!, cartId: Int!, quantity: Int!): Cart
 `;

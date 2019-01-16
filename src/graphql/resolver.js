@@ -31,7 +31,7 @@ const root = {
             })
         }
     },
-    getOneCart: async ({ id }) => {
+    getOneCart: async ({id}) => {
         return await Cart.find({
             where: {
                 id: id
@@ -72,12 +72,11 @@ const root = {
             return cart;
         });
     },
-    addItemToCart: async({ cartId, itemId, quantity }) => {
-        if (await itemExists(itemId)) {
-            // create an instance of cartItem with relationship cartItem -> cart
-            await CartItem.build({productId: itemId, quantity: quantity, cartId: cartId}).save()
+    addItemToCart: async({ cartId, productId, quantity }) => {
+        if (await itemExists(productId)) {
+            await CartItem.build({productId: productId, quantity: quantity, cartId: cartId}).save()
+            return await root.getOneCart({id: cartId});
         } else {
-            // throw item does not exist error
             throw new Error(errorName.ITEM_DOES_NOT_EXIST);
         }
     }
@@ -90,9 +89,9 @@ async function itemExists(itemId) {
         }
     }).then(count => {
         if (count != 0) {
-            return false;
+            return true;
         }
-        return true;
+        return false;
     })
 }
 
