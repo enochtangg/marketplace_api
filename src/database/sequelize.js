@@ -24,6 +24,11 @@ CartItem.belongsTo(Product, {as: 'product'});
 
 sequelize.sync({ force: true }).then(() => {
   console.log(`Database & tables created!`);
+  // For testing
+  sequelize.query("INSERT INTO products(title, price, inventoryCount) VALUES ('pencil', 1.50, 32);", { type: sequelize.QueryTypes.INSERT});
+  sequelize.query("INSERT INTO products(title, price, inventoryCount) VALUES ('binder', 5.00, 5);", { type: sequelize.QueryTypes.INSERT});
+  sequelize.query("INSERT INTO products(title, price, inventoryCount) VALUES ('eraser', 2.25, 15);", { type: sequelize.QueryTypes.INSERT});
+  sequelize.query("INSERT INTO carts(owner) VALUES ('Enoch Tang');", { type: sequelize.QueryTypes.INSERT});
 })
 
 module.exports = { Product, Cart, CartItem, sequelize };

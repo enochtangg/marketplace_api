@@ -1,5 +1,6 @@
 const {Product} = require('../database/sequelize');
 const {Cart} = require('../database/sequelize');
+const {CartItem} = require('../database/sequelize');
 const Sequelize = require('sequelize');
 
 const Op = Sequelize.Op;
@@ -30,17 +31,29 @@ const root = {
             })
         }
     },
-    getOneUser: async ({ id }) => {
-        return await Cart.findAll({
+    getOneCart: async ({ id }) => {
+        return await Cart.find({
             where: {
                 id: id
             }
+        }).then(async cartData => {
+            let cartItems = await getAllAssociatedCartItems(id);
+            const cart = {
+                id: cartData.id,
+                owner: cartData.owner,
+                subtotal: cartData.subtotal,
+                total: cartData.total,
+                numberOfItems: cartData.numberOfItems,
+                cartedItems: cartItems
+            };
+            return cart;
         });
     },
-    getAllUsers: async () => {
+    getAllCarts: async () => {
         return await Cart.findAll();
+        // attach cartItems to object?
     },
-    createUser: async ({ owner }) => {
+    createCart: async ({ owner }) => {
         return await Cart.findOrCreate({
             where: {
               owner: owner.trim()
@@ -59,10 +72,37 @@ const root = {
             return cart;
         });
     },
-    addItemToCart: async({ item_id, cart_owner }) => {
-        // create an instance of cartItem with relationship cartItem -> cart
+    addItemToCart: async({ cartId, itemId, quantity }) => {
+        if (await itemExists(itemId)) {
+            // create an instance of cartItem with relationship cartItem -> cart
+            await CartItem.build({productId: itemId, quantity: quantity, cartId: cartId}).save()
+        } else {
+            // throw item does not exist error
+            throw new Error(errorName.ITEM_DOES_NOT_EXIST);
+        }
     }
 };
+
+async function itemExists(itemId) {
+    return await Product.count({
+        where: {
+            id: itemId
+        }
+    }).then(count => {
+        if (count != 0) {
+            return false;
+        }
+        return true;
+    })
+}
+
+async function getAllAssociatedCartItems(cartId) {
+    return await CartItem.findAll({
+        where: {
+            cartId: cartId
+        }
+    });
+}
 
 module.exports = root;
 

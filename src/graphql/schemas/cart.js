@@ -1,14 +1,21 @@
 exports.Cart = `
+type CartItem{
+    id: Int
+    cartId: Int
+    productId: Int
+    quantity: Int
+}
 type Cart {
     id: Int
     owner: String
     subtotal: Float
     total: Float
     numberOfItems: Int
+    cartedItems: [CartItem]
 }`;
 
 exports.CartQueries = `
-    getOneCart(id: Int!): [Cart]
+    getOneCart(id: Int!): Cart
     getAllCarts: [Cart]
 `;
 
