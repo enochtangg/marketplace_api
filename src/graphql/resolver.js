@@ -10,7 +10,7 @@ const { errorName } = require('../utlils/errors');
 // The root provides a resolver function for each API endpoint
 const root = {
     getOneProduct: async ({ id }) => {
-        return await Product.findAll({
+        return await Product.findOne({
             where: {
                 id: id
             }
@@ -36,6 +36,8 @@ const root = {
             }
         }).then(async cartData => {
             let cartItems = await getAllAssociatedCartItems(id);
+            console.log(cartItems);
+
             const cart = {
                 id: cartData.id,
                 owner: cartData.owner,
@@ -72,7 +74,6 @@ const root = {
     },
     addItemToCart: async({ cartId, productId, quantity }) => {
         if (await itemExistsInProducts(productId)) {
-            // if item doesnt already exists in cart then create new one
             if (await itemExistsInCartItems(productId)) {
                 await CartItem.find({
                     where: {
@@ -82,7 +83,8 @@ const root = {
                     await option.increment('quantity', { by: quantity });
                 });
             } else {
-                await CartItem.build({productId: productId, quantity: quantity, cartId: cartId}).save()
+                let product = await root.getOneProduct({id: productId});
+                await CartItem.build({productId: productId, productTitle: product.title, productPrice: product.price, quantity: quantity, cartId: cartId}).save();
             }            
             
             await Cart.find({

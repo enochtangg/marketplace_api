@@ -4,6 +4,7 @@ type Product {
     title: String
     price: Float
     inventoryCount: Int
+    
 }`;
 
 exports.ProductQueries = `

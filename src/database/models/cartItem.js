@@ -10,6 +10,14 @@ module.exports = (sequelize, type) => {
             type: type.INTEGER,
             allowNull: false
         },
+        productTitle: {
+            type: type.STRING,
+            allowNull: false
+        },
+        productPrice: {
+            type: type.DOUBLE,
+            allowNull: false
+        },
         quantity: {
             type: type.INTEGER,
             allowNull: false

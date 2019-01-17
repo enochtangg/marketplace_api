@@ -1,8 +1,10 @@
 exports.Cart = `
-type CartItem{
+type CartItem {
     id: Int
     cartId: Int
     productId: Int
+    productTitle: String
+    productPrice: Float
     quantity: Int
 }
 type Cart {
