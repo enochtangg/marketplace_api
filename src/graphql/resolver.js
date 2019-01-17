@@ -95,6 +95,27 @@ const root = {
         } else {
             throw new Error(errorName.ITEM_DOES_NOT_EXIST);
         }
+    },
+    removeItemFromCart: async({ cartId, productId }) => {
+        // Check if the item exists in products
+        if (await itemExistsInProducts(productId)) {
+            // Check if the item is already carted, if it already is then just increase the quantity
+            if (await itemExistsInCartItems(productId)) {
+                await CartItem.destroy({
+                    where: {
+                        productId: productId
+                    }
+                })
+            } else {
+                throw new Error(errorName.ITEM_DOES_NOT_EXIST_IN_CART);
+            }         
+            
+            await updateCartTotals(cartId); // update totals
+
+            return await root.getOneCart({id: cartId});
+        } else {
+            throw new Error(errorName.ITEM_DOES_NOT_EXIST);
+        }
     }
 };
 
@@ -150,7 +171,7 @@ async function getCartSubtotal(cartId) {
     let cartItems = await getAllAssociatedCartItems(cartId);
     let subtotal = 0;
     for (let cartItem of cartItems) {
-        subtotal += cartItem.productPrice
+        subtotal += cartItem.productPrice * cartItem.quantity;
     }
     return subtotal;
 }

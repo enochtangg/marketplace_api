@@ -24,4 +24,5 @@ exports.CartQueries = `
 exports.CartMutations = `
     createCart(owner: String!): Cart
     addItemToCart(productId: Int!, cartId: Int!, quantity: Int!): Cart
+    removeItemFromCart(productId: Int!, cartId: Int!): Cart
 `;
