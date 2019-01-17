@@ -5,8 +5,6 @@ const Sequelize = require('sequelize');
 
 const Op = Sequelize.Op;
 
-const ProductResolvers = require('./resolvers/products');
-
 const { errorName } = require('../utlils/errors');
 
 // The root provides a resolver function for each API endpoint
@@ -73,8 +71,27 @@ const root = {
         });
     },
     addItemToCart: async({ cartId, productId, quantity }) => {
-        if (await itemExists(productId)) {
-            await CartItem.build({productId: productId, quantity: quantity, cartId: cartId}).save()
+        if (await itemExistsInProducts(productId)) {
+            // if item doesnt already exists in cart then create new one
+            if (await itemExistsInCartItems(productId)) {
+                await CartItem.find({
+                    where: {
+                        productId: productId
+                    }
+                }).then(async option => {
+                    await option.increment('quantity', { by: quantity });
+                });
+            } else {
+                await CartItem.build({productId: productId, quantity: quantity, cartId: cartId}).save()
+            }            
+            
+            await Cart.find({
+                where: {
+                    id: cartId
+                }
+            }).then(async option => {
+                await option.increment('numberOfItems');
+            });
             return await root.getOneCart({id: cartId});
         } else {
             throw new Error(errorName.ITEM_DOES_NOT_EXIST);
@@ -82,10 +99,23 @@ const root = {
     }
 };
 
-async function itemExists(itemId) {
+async function itemExistsInProducts(itemId) {
     return await Product.count({
         where: {
             id: itemId
+        }
+    }).then(count => {
+        if (count != 0) {
+            return true;
+        }
+        return false;
+    })
+}
+
+async function itemExistsInCartItems(itemId) {
+    return await CartItem.count({
+        where: {
+            productId: itemId
         }
     }).then(count => {
         if (count != 0) {
