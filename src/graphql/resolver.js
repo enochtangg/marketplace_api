@@ -49,8 +49,23 @@ const root = {
         });
     },
     getAllCarts: async () => {
-        return await Cart.findAll();
-        // attach cartItems to object?
+        return await Cart.findAll().then(async cartsData => {
+            let newCartData = [];
+            for (let cartData of cartsData) {
+                let cartItems = await getAllAssociatedCartItems(cartData.id);
+                const cart = {
+                    id: cartData.id,
+                    owner: cartData.owner,
+                    subtotal: cartData.subtotal,
+                    total: cartData.total,
+                    numberOfItems: cartData.numberOfItems,
+                    cartedItems: cartItems
+                };
+                newCartData.push(cart)
+            }
+            return newCartData
+        });
+
     },
     createCart: async ({ owner }) => {
         return await Cart.findOrCreate({
@@ -165,19 +180,6 @@ async function updateCartTotals(cartId) {
         },
         { where: { id: cartId } }
     )
-}
-
-async function getCartSubtotal(cartId) {
-    let cartItems = await getAllAssociatedCartItems(cartId);
-    let subtotal = 0;
-    for (let cartItem of cartItems) {
-        subtotal += cartItem.productPrice * cartItem.quantity;
-    }
-    return subtotal;
-}
-
-async function updateCartTotal(cartId) {
-
 }
 
 async function getAllAssociatedCartItems(cartId) {
