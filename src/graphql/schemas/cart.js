@@ -17,13 +17,12 @@ type Cart {
 }`;
 
 exports.CartQueries = `
-    getOneCart(id: Int!): Cart
-    getAllCarts: [Cart]
+    getCart(owner: String!): Cart
 `;
 
 exports.CartMutations = `
     createCart(owner: String!): Cart
-    addItemToCart(productId: Int!, cartId: Int!, quantity: Int!): Cart
-    removeItemFromCart(productId: Int!, cartId: Int!): Cart
-    checkoutCart(cartId: Int!): String
+    addItemToCart(productId: Int!, owner: String!, quantity: Int!): Cart
+    removeItemFromCart(productId: Int!, owner: String!): Cart
+    checkoutCart(owner: String!): String
 `;

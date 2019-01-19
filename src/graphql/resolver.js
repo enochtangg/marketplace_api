@@ -29,30 +29,15 @@ const root = {
             })
         }
     },
-    getOneCart: async ({id}) => {
-        return await Cart.findOne({
-            where: {
-                id: id
-            }
-        }).then(async cartData => {
-            let cartItems = await getAllAssociatedCartItems(id);
-
-            const cart = {
-                id: cartData.id,
-                owner: cartData.owner,
-                subtotal: cartData.subtotal,
-                total: cartData.total,
-                numberOfItems: cartData.numberOfItems,
-                cartedItems: cartItems
-            };
-            return cart;
-        });
-    },
-    getAllCarts: async () => {
-        return await Cart.findAll().then(async cartsData => {
-            let newCartData = [];
-            for (let cartData of cartsData) {
+    getCart: async ({owner}) => {
+        if (cartExistsInCarts(owner)) {
+            return await Cart.findOne({
+                where: {
+                    owner: owner
+                }
+            }).then(async cartData => {
                 let cartItems = await getAllAssociatedCartItems(cartData.id);
+    
                 const cart = {
                     id: cartData.id,
                     owner: cartData.owner,
@@ -61,11 +46,12 @@ const root = {
                     numberOfItems: cartData.numberOfItems,
                     cartedItems: cartItems
                 };
-                newCartData.push(cart)
-            }
-            return newCartData
-        });
-
+                return cart;
+            });
+        } else {
+            throw new Error(errorName.CART_DOES_NOT_EXIST);
+        }
+        
     },
     createCart: async ({ owner }) => {
         return await Cart.findOrCreate({
@@ -86,9 +72,14 @@ const root = {
             return cart;
         });
     },
-    addItemToCart: async({ cartId, productId, quantity }) => {
+    addItemToCart: async({ owner, productId, quantity }) => {
         // Check if cart exists 
-        if (await cartExistsInCarts(cartId)) {
+        if (await cartExistsInCarts(owner)) {
+            let cart = await Cart.find({
+                where: {
+                    owner: owner
+                }
+            })
             // Check if the item exists in products
             if (await itemExistsInProducts(productId)) {
                 // Check if the item is already carted, if it already is then just increase the quantity
@@ -102,13 +93,13 @@ const root = {
                     });
                 } else {
                     let product = await root.getOneProduct({id: productId});
-                    await CartItem.build({productId: productId, productTitle: product.title, productPrice: product.price, quantity: quantity, cartId: cartId}).save();
-                    await incrementNumberOfItems(cartId); // update number of items in cart
+                    await CartItem.build({productId: productId, productTitle: product.title, productPrice: product.price, quantity: quantity, cartId: cart.id}).save();
+                    await incrementNumberOfItems(cart.id); // update number of items in cart
                 }            
                 
-                await updateCartTotals(cartId); // update totals
+                await updateCartTotals(cart.id); // update totals
 
-                return await root.getOneCart({id: cartId});
+                return await root.getCart({owner: owner});
             } else {
                 throw new Error(errorName.ITEM_DOES_NOT_EXIST);
             }
@@ -117,9 +108,10 @@ const root = {
         }
         
     },
-    removeItemFromCart: async({ cartId, productId }) => {
+    removeItemFromCart: async({ owner, productId }) => {
         // Check if cart exists 
-        if (await cartExistsInCarts(cartId)) {
+        if (await cartExistsInCarts(owner)) {
+            let cart = await root.getCart({owner: owner});
             // Check if the item exists in products
             if (await itemExistsInProducts(productId)) {
                 // Check if the item is already carted, if it already is then just increase the quantity
@@ -133,8 +125,8 @@ const root = {
                     throw new Error(errorName.ITEM_DOES_NOT_EXIST_IN_CART);
                 }         
                 
-                await updateCartTotals(cartId); // update totals
-                return await root.getOneCart({id: cartId});
+                await updateCartTotals(cart.id); // update totals
+                return await root.getCart({owner: owner});
 
             } else {
                 throw new Error(errorName.ITEM_DOES_NOT_EXIST);
@@ -143,10 +135,10 @@ const root = {
             throw new Error(errorName.CART_DOES_NOT_EXIST);
         }
     },
-    checkoutCart: async ({ cartId }) => {
-        // check if cartId exists
-        if (await cartExistsInCarts(cartId)) {
-            let data = await root.getOneCart({id: cartId});
+    checkoutCart: async ({ owner }) => {
+        // check if cart exists
+        if (await cartExistsInCarts(owner)) {
+            let data = await root.getCart({owner: owner});
 
             // check if enough inventory
             let cartItems = data.cartedItems;
@@ -173,7 +165,7 @@ const root = {
             // remove cart
             await Cart.destroy({
                 where: {
-                    id: cartId
+                    id: data.id
                 }
             });
 
@@ -216,10 +208,10 @@ async function itemExistsInCartItems(itemId) {
     })
 }
 
-async function cartExistsInCarts(cartId) {
+async function cartExistsInCarts(owner) {
     return await Cart.count({
         where: {
-            id: cartId
+            owner: owner.trim()
         }
     }).then(count => {
         if (count != 0) {
