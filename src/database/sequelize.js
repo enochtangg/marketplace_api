@@ -4,11 +4,9 @@ const ProductModel = require('./models/product');
 const CartModel = require('./models/cart');
 const CartItemModel = require('./models/cartItem');
 
-const bcrypt = require('bcrypt');
-
-const sequelize = new Sequelize('marketplace', 'root', 'password', {
-  host: 'localhost',
-  dialect: 'mysql',
+const sequelize = new Sequelize(process.env.DATABASE, process.env.USERNAME, process.env.PASSWORD, {
+  host: process.env.DATABASE_HOST,
+  dialect: process.env.DATABASE_DIALECT,
   pool: {
     max: 10,
     min: 0,

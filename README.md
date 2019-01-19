@@ -8,6 +8,5 @@ todo:
 [x]remove cartItem and update cart info
 [x]get all carts resolver
 [x]implement checkout functionality
-[]secure it
-[]dockerize it 
+[x]secure it
 []document it
