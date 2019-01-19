@@ -2,6 +2,8 @@ const {Product} = require('../database/sequelize');
 const {Cart} = require('../database/sequelize');
 const {CartItem} = require('../database/sequelize');
 const Sequelize = require('sequelize');
+const bcrypt = require('bcrypt');
+const jsonwebtoken = require('jsonwebtoken');
 
 const Op = Sequelize.Op;
 
@@ -9,6 +11,51 @@ const { errorName } = require('../utlils/errors');
 
 // The root provides a resolver function for each API endpoint
 const root = {
+      signup: async ({ owner, password }) => {
+        return await Cart.findOrCreate({
+            where: {
+              owner: owner.trim()
+            },
+            defaults: {
+              owner: owner.trim(),
+              password: await bcrypt.hash(password, 10)
+            }
+          }).then(async (result) => {
+            let cart = result[0];
+            let created = result[1];
+      
+            if (!created) {
+                throw new Error(errorName.DUPLICATE_ENTRY);
+            }
+            console.log('Created cart');
+
+            // return json web token
+            return jsonwebtoken.sign(
+                { id: cart.id, owner: cart.owner },process.env.JWT_SECRET,
+                { expiresIn: '1y' }
+            )
+        });
+    },
+    login: async ({ owner, password }) => {
+        const cart = await Cart.findOne({ 
+            where: { 
+                owner: owner
+            } 
+        });
+        if (!cart) {
+            throw new Error(errorName.OWNER_DOES_NOT_EXIST);
+        }
+        const valid = await bcrypt.compare(password, cart.password);
+        if (!valid) {
+            throw new Error(errorName.INCORRECT_PASSWORD);
+        }
+
+        // return json web token
+        return jsonwebtoken.sign({
+            id: cart.id,
+            owner: cart.owner
+        }, process.env.JWT_SECRET, { expiresIn: '1y' })
+    },
     getOneProduct: async ({ id }) => {
         return await Product.findOne({
             where: {
@@ -29,158 +76,137 @@ const root = {
             })
         }
     },
-    getCart: async ({owner}) => {
-        if (cartExistsInCarts(owner)) {
-            return await Cart.findOne({
-                where: {
-                    owner: owner
-                }
-            }).then(async cartData => {
-                let cartItems = await getAllAssociatedCartItems(cartData.id);
-    
-                const cart = {
-                    id: cartData.id,
-                    owner: cartData.owner,
-                    subtotal: cartData.subtotal,
-                    total: cartData.total,
-                    numberOfItems: cartData.numberOfItems,
-                    cartedItems: cartItems
-                };
-                return cart;
-            });
-        } else {
-            throw new Error(errorName.CART_DOES_NOT_EXIST);
+    getCart: async (_, context) => {
+        // Check Authentication
+        let user = context.user;
+        if (!user) {
+            throw new Error(errorName.AUTHENTICATION_ERROR);
         }
-        
-    },
-    createCart: async ({ owner }) => {
-        return await Cart.findOrCreate({
+
+        return await Cart.findOne({
             where: {
-              owner: owner.trim()
-            },
-            defaults: {
-              owner: owner.trim()
+                owner: user.owner
             }
-          }).then(async (result) => {
-            let cart = result[0];
-            let created = result[1];
-      
-            if (!created) {
-                throw new Error(errorName.DUPLICATE_ENTRY);
-            }
-            console.log('Created cart');
+        }).then(async cartData => {
+            let cartItems = await getAllAssociatedCartItems(cartData.id);
+
+            const cart = {
+                id: cartData.id,
+                owner: cartData.owner,
+                subtotal: cartData.subtotal,
+                total: cartData.total,
+                numberOfItems: cartData.numberOfItems,
+                cartedItems: cartItems
+            };
             return cart;
         });
     },
-    addItemToCart: async({ owner, productId, quantity }) => {
-        // Check if cart exists 
-        if (await cartExistsInCarts(owner)) {
-            let cart = await Cart.find({
-                where: {
-                    owner: owner
-                }
-            })
-            // Check if the item exists in products
-            if (await itemExistsInProducts(productId)) {
-                // Check if the item is already carted, if it already is then just increase the quantity
-                if (await itemExistsInCartItems(productId)) {
-                    await CartItem.find({
-                        where: {
-                            productId: productId
-                        }
-                    }).then(async option => {
-                        await option.increment('quantity', { by: quantity });
-                    });
-                } else {
-                    let product = await root.getOneProduct({id: productId});
-                    await CartItem.build({productId: productId, productTitle: product.title, productPrice: product.price, quantity: quantity, cartId: cart.id}).save();
-                    await incrementNumberOfItems(cart.id); // update number of items in cart
-                }            
-                
-                await updateCartTotals(cart.id); // update totals
+    addItemToCart: async({productId, quantity}, context) => {
+        // Check Authentication 
+        let user = context.user;
+        if (!user) {
+            throw new Error(errorName.AUTHENTICATION_ERROR);
+        }
 
-                return await root.getCart({owner: owner});
+        // Check if the item exists in products
+        if (await itemExistsInProducts(productId)) {
+            // Check if the item is already carted, if it already is then just increase the quantity
+            if (await itemExistsInCartItems(productId)) {
+                await CartItem.find({
+                    where: {
+                        productId: productId
+                    }
+                }).then(async option => {
+                    await option.increment('quantity', { by: quantity });
+                });
             } else {
-                throw new Error(errorName.ITEM_DOES_NOT_EXIST);
-            }
+                let product = await root.getOneProduct({id: productId});
+                await CartItem.build({productId: productId, productTitle: product.title, productPrice: product.price, quantity: quantity, cartId: user.id}).save();
+                await incrementNumberOfItems(user.id); // update number of items in cart
+            }            
+            
+            await updateCartTotals(user.id); // update totals
+
+            return await root.getCart({}, context);
         } else {
-            throw new Error(errorName.CART_DOES_NOT_EXIST);
+            throw new Error(errorName.ITEM_DOES_NOT_EXIST);
         }
         
     },
-    removeItemFromCart: async({ owner, productId }) => {
-        // Check if cart exists 
-        if (await cartExistsInCarts(owner)) {
-            let cart = await root.getCart({owner: owner});
-            // Check if the item exists in products
-            if (await itemExistsInProducts(productId)) {
-                // Check if the item is already carted, if it already is then just increase the quantity
-                if (await itemExistsInCartItems(productId)) {
-                    await CartItem.destroy({
-                        where: {
-                            productId: productId
-                        }
-                    })
-                } else {
-                    throw new Error(errorName.ITEM_DOES_NOT_EXIST_IN_CART);
-                }         
-                
-                await updateCartTotals(cart.id); // update totals
-                return await root.getCart({owner: owner});
-
-            } else {
-                throw new Error(errorName.ITEM_DOES_NOT_EXIST);
-            }
-        } else {
-            throw new Error(errorName.CART_DOES_NOT_EXIST);
+    removeItemFromCart: async({ productId }, context) => {
+        // Check Authentication 
+        let user = context.user;
+        if (!user) {
+            throw new Error(errorName.AUTHENTICATION_ERROR);
         }
-    },
-    checkoutCart: async ({ owner }) => {
-        // check if cart exists
-        if (await cartExistsInCarts(owner)) {
-            let data = await root.getCart({owner: owner});
 
-            // check if enough inventory
-            let cartItems = data.cartedItems;
-            for (let cartItem of cartItems) {
-                let product = await Product.find({
-                    where: {
-                        id: cartItem.productId
-                    }
-                });
-                if (cartItem.quantity > product.inventoryCount) {
-                    throw new Error(errorName.SOLD_OUT);
-                }
-            }
-
-            // remove cartItems
-            for (let cartItem of cartItems) {
+        // Check if the item exists in products
+        if (await itemExistsInProducts(productId)) {
+            // Check if the item is already carted, if it already is then just increase the quantity
+            if (await itemExistsInCartItems(productId)) {
                 await CartItem.destroy({
                     where: {
-                        productId: cartItem.productId
+                        productId: productId
                     }
                 })
-            }
+            } else {
+                throw new Error(errorName.ITEM_DOES_NOT_EXIST_IN_CART);
+            }         
             
-            // remove cart
-            await Cart.destroy({
+            await updateCartTotals(user.id); // update totals
+            return await root.getCart({}, context);
+
+        } else {
+            throw new Error(errorName.ITEM_DOES_NOT_EXIST);
+        }
+    },
+    checkoutCart: async (_, context) => {
+        // Check Authentication 
+        let user = context.user;
+        if (!user) {
+            throw new Error(errorName.AUTHENTICATION_ERROR);
+        }
+
+        // check if cart exists
+        let data = await root.getCart({}, context);
+
+        // check if enough inventory
+        let cartItems = data.cartedItems;
+        for (let cartItem of cartItems) {
+            let product = await Product.find({
                 where: {
-                    id: data.id
+                    id: cartItem.productId
                 }
             });
-
-            // decrement inventory
-            for (let cartItem of cartItems) {
-                await decrementItemInventory(cartItem.productId, cartItem.quantity);
+            if (cartItem.quantity > product.inventoryCount) {
+                throw new Error(errorName.SOLD_OUT);
             }
-
-            let message = `You have successfully checked out your cart`
-            return message;
-        } else {
-            throw new Error(errorName.CART_DOES_NOT_EXIST);
         }
+
+        // remove cartItems
+        for (let cartItem of cartItems) {
+            await CartItem.destroy({
+                where: {
+                    productId: cartItem.productId
+                }
+            })
+        }
+
+        // decrement inventory
+        for (let cartItem of cartItems) {
+            await decrementItemInventory(cartItem.productId, cartItem.quantity);
+        }
+
+        let message = `You have successfully checked out your cart`
+        return message;
     }
 };
+
+async function checkAuthJWT(user) {
+    if (!user) {
+        throw new Error(errorName.AUTHENTICATION_ERROR);
+    }
+}
 
 async function itemExistsInProducts(itemId) {
     return await Product.count({

@@ -10,6 +10,10 @@ module.exports = (sequelize, type) => {
             type: type.STRING,
             allowNull: false
         },
+        password: {
+            type: type.STRING,
+            allowNull: false
+        },
         subtotal: {
             type: type.DOUBLE,
             defaultValue: 0
