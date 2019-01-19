@@ -87,49 +87,105 @@ const root = {
         });
     },
     addItemToCart: async({ cartId, productId, quantity }) => {
-        // Check if the item exists in products
-        if (await itemExistsInProducts(productId)) {
-            // Check if the item is already carted, if it already is then just increase the quantity
-            if (await itemExistsInCartItems(productId)) {
-                await CartItem.find({
-                    where: {
-                        productId: productId
-                    }
-                }).then(async option => {
-                    await option.increment('quantity', { by: quantity });
-                });
-            } else {
-                let product = await root.getOneProduct({id: productId});
-                await CartItem.build({productId: productId, productTitle: product.title, productPrice: product.price, quantity: quantity, cartId: cartId}).save();
-                await incrementNumberOfItems(cartId); // update number of items in cart
-            }            
-            
-            await updateCartTotals(cartId); // update totals
+        // Check if cart exists 
+        if (await cartExistsInCarts(cartId)) {
+            // Check if the item exists in products
+            if (await itemExistsInProducts(productId)) {
+                // Check if the item is already carted, if it already is then just increase the quantity
+                if (await itemExistsInCartItems(productId)) {
+                    await CartItem.find({
+                        where: {
+                            productId: productId
+                        }
+                    }).then(async option => {
+                        await option.increment('quantity', { by: quantity });
+                    });
+                } else {
+                    let product = await root.getOneProduct({id: productId});
+                    await CartItem.build({productId: productId, productTitle: product.title, productPrice: product.price, quantity: quantity, cartId: cartId}).save();
+                    await incrementNumberOfItems(cartId); // update number of items in cart
+                }            
+                
+                await updateCartTotals(cartId); // update totals
 
-            return await root.getOneCart({id: cartId});
+                return await root.getOneCart({id: cartId});
+            } else {
+                throw new Error(errorName.ITEM_DOES_NOT_EXIST);
+            }
         } else {
-            throw new Error(errorName.ITEM_DOES_NOT_EXIST);
+            throw new Error(errorName.CART_DOES_NOT_EXIST);
         }
+        
     },
     removeItemFromCart: async({ cartId, productId }) => {
-        // Check if the item exists in products
-        if (await itemExistsInProducts(productId)) {
-            // Check if the item is already carted, if it already is then just increase the quantity
-            if (await itemExistsInCartItems(productId)) {
+        // Check if cart exists 
+        if (await cartExistsInCarts(cartId)) {
+            // Check if the item exists in products
+            if (await itemExistsInProducts(productId)) {
+                // Check if the item is already carted, if it already is then just increase the quantity
+                if (await itemExistsInCartItems(productId)) {
+                    await CartItem.destroy({
+                        where: {
+                            productId: productId
+                        }
+                    })
+                } else {
+                    throw new Error(errorName.ITEM_DOES_NOT_EXIST_IN_CART);
+                }         
+                
+                await updateCartTotals(cartId); // update totals
+                return await root.getOneCart({id: cartId});
+
+            } else {
+                throw new Error(errorName.ITEM_DOES_NOT_EXIST);
+            }
+        } else {
+            throw new Error(errorName.CART_DOES_NOT_EXIST);
+        }
+    },
+    checkoutCart: async ({ cartId }) => {
+        // check if cartId exists
+        if (await cartExistsInCarts(cartId)) {
+            let data = await root.getOneCart({id: cartId});
+
+            // check if enough inventory
+            let cartItems = data.cartedItems;
+            for (let cartItem of cartItems) {
+                let product = await Product.find({
+                    where: {
+                        id: cartItem.productId
+                    }
+                });
+                if (cartItem.quantity > product.inventoryCount) {
+                    throw new Error(errorName.SOLD_OUT);
+                }
+            }
+
+            // remove cartItems
+            for (let cartItem of cartItems) {
                 await CartItem.destroy({
                     where: {
-                        productId: productId
+                        productId: cartItem.productId
                     }
                 })
-            } else {
-                throw new Error(errorName.ITEM_DOES_NOT_EXIST_IN_CART);
-            }         
+            }
             
-            await updateCartTotals(cartId); // update totals
+            // remove cart
+            await Cart.destroy({
+                where: {
+                    id: cartId
+                }
+            });
 
-            return await root.getOneCart({id: cartId});
+            // decrement inventory
+            for (let cartItem of cartItems) {
+                await decrementItemInventory(cartItem.productId, cartItem.quantity);
+            }
+
+            let message = `You have successfully checked out your cart`
+            return message;
         } else {
-            throw new Error(errorName.ITEM_DOES_NOT_EXIST);
+            throw new Error(errorName.CART_DOES_NOT_EXIST);
         }
     }
 };
@@ -160,6 +216,19 @@ async function itemExistsInCartItems(itemId) {
     })
 }
 
+async function cartExistsInCarts(cartId) {
+    return await Cart.count({
+        where: {
+            id: cartId
+        }
+    }).then(count => {
+        if (count != 0) {
+            return true;
+        }
+        return false;
+    })
+}
+
 async function incrementNumberOfItems(cartId) {
     await Cart.find({
         where: {
@@ -170,7 +239,26 @@ async function incrementNumberOfItems(cartId) {
     });
 }
 
+async function decrementItemInventory(itemId, value) {
+    await Product.find({
+        where: {
+            id: itemId
+        }
+    }).then(async option => {
+        await option.increment('inventoryCount', { by: -value });
+    });
+}
+
 async function updateCartTotals(cartId) {
+    async function getCartSubtotal(cartId) {
+        let cartItems = await getAllAssociatedCartItems(cartId);
+        let subtotal = 0;
+        for (let cartItem of cartItems) {
+            subtotal += (cartItem.productPrice *cartItem.quantity)
+        }
+        return subtotal;
+    }
+
     let subtotal = await getCartSubtotal(cartId);
     let total = subtotal*1.13;
     await Cart.update(

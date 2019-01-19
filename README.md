@@ -7,7 +7,7 @@ todo:
 [x]update subtotal, total, and # of items in cart
 [x]remove cartItem and update cart info
 [x]get all carts resolver
-[]implement checkout functionality
-secure it
-dockerize it 
-document it
+[x]implement checkout functionality
+[]secure it
+[]dockerize it 
+[]document it
