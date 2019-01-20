@@ -14,6 +14,7 @@ The marketplace API is backend application that contains the basic functionality
 ## Technical Overview
 This repository contains the code for the market_api application written in [Node.js](https://nodejs.org/en/). The application ultizes [GraphQL](https://graphql.org/) which is a query lanuage for the API that alllows the user to clearly and easily define what type of data they want to receive. As for storing persistent data, the application uses a [MySQL](https://www.mysql.com/) instance and uses [Sequelize](http://docs.sequelizejs.com/) as a ORM tool to interact with the database. 
 
+
 ## Security
 The API is secured by utilizing [JWT](https://jwt.io/). When a user signs-up or login, the API will  automatically create `Cart` instance in the database and will return JWT that contains the data for that cart. The user may now include this JWT as a **Bearer Token** in their request headers and will have access to modifying their cart. This allows users to signup or login (using a username & password) into their own cart. Users will not have access to each other's carts unless they somehow get a user's JWT (or username & password).
 
@@ -21,6 +22,11 @@ How does the Authorization work within the server? Since GraphQL has only one en
 
 
 ## Database Schema
+I look inspiration from OOP design principles when designing the layout of the database schema. Essentially, we have a `Cart` entity that stores all the information from the user. In the future, I would go even further to and make `Cart` and `User` entities separate from each other. The reason for this is because in a eCommerce website (Shopify), you would typically have a account (which would store all the `User` metadata) and a it's respective `Cart` which would store all the its metadata as well as `CartItems` data.
+
+In addition, we also have `Product` entity that hold all the product metadata and a `CartItem` entity which is created when a user adds an item to cart. The reason why we need a new `CartItem` object is because we need entity to carry the foreign keys of both the cartId and productId. By doing this, we have a link that tells us which items have been added to which cart.
+
+
 ![db_schema](assets/marketplace_db_schema.png)
 
 ## API Usage
@@ -149,6 +155,8 @@ I have implemented more custom error handling (eg. trying to cart an item that d
 Although this project is for a Shopify Challenge to replicate the backbones the backend API of a eCommerce website,  some future steps I would like to incorporate is the following:
 
 * Containerize this application with Docker for deployment in any cloud service
+* Split Cart entity into Carts and Users
 * Add more functionality to this API 
-* Think about how we would scale this application (distributed databases with replication or partitioning, handling concurrent queries to database, etc.)
+* If this was a real world application, I might think about splitting this into microservices (eg. have a service to handle user authentication, service to handle querying products, and etc.)
+* Again if this was a real world application, think about how we would scale this application (distributed databases with replication or partitioning, handling concurrent queries to database, etc.)
 * Write test cases
