@@ -23,7 +23,21 @@ How does the Authorization work within the server? Since GraphQL has only one en
 ## Database Schema
 ![db_schema](assets/marketplace_db_schema.png)
 
-### Endpoint/Usage
+## Endpoint/Usage
+
+### Product Queries
+
+| Method               | Params                             | Return Type  | Description                                          |
+| -------------------- |:----------------------------------:| ------------:| ----------------------------------------------------:|
+| getOneProduct()      | id: Int!                           | Product      | Returns the product with the corresponding productId |
+| getAllProducts()     | onlyAvailableInventory: Boolean!   | \[Product\]  | Returns an array of all products. If boolean `onlyAvailableInventory` is true, it will only return all the products with available inventory (where inventoryCount != 0)
+
+
+| Method               | Description                                                     | Params                             | Return Type  |
+| -------------------- |:----------------------------------------------------------------| :---------------------------------:| ------------:|
+| getOneProduct()      | Returns the product with the corresponding productId            | id: Int!                           | Product      |
+| getAllProducts()     | Returns an array of all products. If boolean `onlyAvailableInventory` is true, it will only return all the products with available inventory (where inventoryCount != 0) | onlyAvailableInventory: Boolean!   | \[Product\]  |
+
 
 ## Get Started
 
