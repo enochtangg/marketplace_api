@@ -26,17 +26,25 @@ How does the Authorization work within the server? Since GraphQL has only one en
 ## Endpoint/Usage
 
 ### Product Queries
+| Method               | Description                                                     | Params                             | Return Type  | Requires JWT   |
+| -------------------- |:----------------------------------------------------------------| :---------------------------------:| ------------:| -------------: |
+| getOneProduct()      | Returns the product with the corresponding productId            | id: Int!                           | Product      | No
+| getAllProducts()     | Returns an array of all products. If boolean `onlyAvailableInventory` is true, it will only return all the products with available inventory (where inventoryCount != 0) | onlyAvailableInventory: Boolean!   | \[Product\]  | No
 
-| Method               | Params                             | Return Type  | Description                                          |
-| -------------------- |:----------------------------------:| ------------:| ----------------------------------------------------:|
-| getOneProduct()      | id: Int!                           | Product      | Returns the product with the corresponding productId |
-| getAllProducts()     | onlyAvailableInventory: Boolean!   | \[Product\]  | Returns an array of all products. If boolean `onlyAvailableInventory` is true, it will only return all the products with available inventory (where inventoryCount != 0)
+### Cart Queries 
+| Method               | Description                                                | Params      | Return Type    | Requires JWT  |
+| -------------------- |:----------------------------------------------------------:| -----------:| --------------:| -------------:|
+| getCart              | Returns the corresponding cart with its respective JWT     | None        | Cart           | Yes           |
 
+### Cart Mutations
+| Method               | Description                                                | Params      | Return Type    | Requires JWT  |
+| -------------------- |:----------------------------------------------------------:| -----------:| --------------:| -------------:|
+| login()              | Returns a JWT with the associated cart metadata associated    | owner: String!, password: String!        | String (JWT)   | No            |
+| signup()             | Creates a new `cart` entity and returns a JWT with the associated cart metadata associated    | owner: String!, password: String!        | String (JWT)   | No            |
+| addItemToCart()      | Searches for the productId and adds it into cart    | productId: Int!, quantity: Int!        | Cart           | Yes           |
+| removeItemFromCart() | Searches for product in cart and removes it    | productId: Int!        | Cart           | Yes           |
+| checkoutCart         | Checks out the cart by validating and decrementing the `inventoryCount` of all the `cartItem` in the cart     | None        | String         | Yes           |
 
-| Method               | Description                                                     | Params                             | Return Type  |
-| -------------------- |:----------------------------------------------------------------| :---------------------------------:| ------------:|
-| getOneProduct()      | Returns the product with the corresponding productId            | id: Int!                           | Product      |
-| getAllProducts()     | Returns an array of all products. If boolean `onlyAvailableInventory` is true, it will only return all the products with available inventory (where inventoryCount != 0) | onlyAvailableInventory: Boolean!   | \[Product\]  |
 
 
 ## Get Started
