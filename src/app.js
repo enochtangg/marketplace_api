@@ -4,7 +4,7 @@ const schema = require('./graphql/schema');
 const root = require('./graphql/resolver');
 const jwt = require('express-jwt');
 const bodyParser = require('body-parser');
-const {errorType} = require('./utlils/errors');
+const {errorType} = require('./utils/errors');
 require('dotenv').config();
 
 // Error lookup middleware

@@ -7,7 +7,7 @@ const jsonwebtoken = require('jsonwebtoken');
 
 const Op = Sequelize.Op;
 
-const { errorName } = require('../utlils/errors');
+const { errorName } = require('../utils/errors');
 
 // The root provides a resolver function for each API endpoint
 const root = {
