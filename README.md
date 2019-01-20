@@ -23,7 +23,7 @@ How does the Authorization work within the server? Since GraphQL has only one en
 ## Database Schema
 ![db_schema](assets/marketplace_db_schema.png)
 
-## Endpoint/Usage
+## API Usage
 
 ### Product Queries
 | Method               | Description                                                     | Params                             | Return Type  | Requires JWT   |
@@ -46,9 +46,50 @@ How does the Authorization work within the server? Since GraphQL has only one en
 | checkoutCart         | Checks out the cart by validating and decrementing the `inventoryCount` of all the `cartItem` in the cart     | None        | String         | Yes           |
 
 
+## Get Started (Setting Up Locally)
+Setting up **marketplace_api** is pretty simple. The two main compontents of this application is the backend server and the database server. The following steps will help you run the server locally, run a MySQL instance locally, and use [Insomnia](https://insomnia.rest/graphql/) for endpoint testing.
 
-## Get Started
+1. Clone this repository.
+
+```
+git clone https://github.com/enochtangg/marketplace_api.git
+```
+
+2. Change into marketplace_api directory
+```
+cd marketplace_api
+```
+
+3. Install dependencies from npm
+```
+npm install
+```
+
+4. Make sure you have MySQL install into your machine. You can check by using:
+```
+mysql -V
+```
+
+5. If you do not have MySQL installed, you can install it using homebrew by following the steps [here](https://gist.github.com/nrollr/3f57fc15ded7dddddcc4e82fe137b58e).
+
+6. Once MySQL is installed, you want to set the root password for your local instance. **For testing purposes, set password to 'password'**. If you want create your own password, remember to change the *DATABASE_PASSWORD* variable in the [.env](.env) file of this repository.
+```
+brew services start mysql
+mysql -u root
+mysql> USE mysql;
+mysql> UPDATE user SET password=PASSWORD("password") WHERE User='root';
+mysql> FLUSH PRIVILEGES;
+mysql> quit
+
+```
+
+7. Lastly, run the server. Once the server starts, it will execute a bunch of raw queries to populate the Products table so you may play around with the carting items.
+```
+npm start
+```
 
 ## Demo
+
+## Error Handling
 
 ## TODO

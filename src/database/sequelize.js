@@ -6,7 +6,7 @@ const CartItemModel = require('./models/cartItem');
 
 const sequelize = new Sequelize(process.env.DATABASE, process.env.USERNAME, process.env.PASSWORD, {
   host: process.env.DATABASE_HOST,
-  dialect: process.env.DATABASE_DIALECT,
+  dialect: 'mysql',
   pool: {
     max: 10,
     min: 0,
